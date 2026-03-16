@@ -7,7 +7,7 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #edeae4;
+      background: #F3F3F2;
       overflow: hidden;
       font-family: 'Geist', system-ui, -apple-system, sans-serif;
       color: #333;
@@ -64,11 +64,11 @@
   </div>
 
   <div class="color-swatches">
-    <button class="swatch active" data-color="#d8ccb8" style="background:#d8ccb8" aria-label="Sand"></button>
-    <button class="swatch" data-color="#dfa8a8" style="background:#dfa8a8" aria-label="Sakura"></button>
-    <button class="swatch" data-color="#90b8d0" style="background:#90b8d0" aria-label="Sora"></button>
-    <button class="swatch" data-color="#a0b888" style="background:#a0b888" aria-label="Matcha"></button>
-    <button class="swatch" data-color="#b098c0" style="background:#b098c0" aria-label="Wisteria"></button>
+    <button class="swatch active" data-color="#EAE5E3" style="background:#EAE5E3" aria-label="Soshoku"></button>
+    <button class="swatch" data-color="#FBFAF5" style="background:#FBFAF5" aria-label="Kinariiro"></button>
+    <button class="swatch" data-color="#F7FCFE" style="background:#F7FCFE" aria-label="Unoharairo"></button>
+    <button class="swatch" data-color="#E7E7EB" style="background:#E7E7EB" aria-label="Murasakisuishiyou"></button>
+    <button class="swatch" data-color="#DCDDDD" style="background:#DCDDDD" aria-label="Shironezu"></button>
   </div>
 
   <script type="importmap">
@@ -94,7 +94,7 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xedeae4);
+    scene.background = new THREE.Color(0xF3F3F2);
 
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -115,26 +115,23 @@
 
     // ── Materials ──────────────────────────────
     const bodyMat = new THREE.MeshPhysicalMaterial({
-      color: 0xd8ccb8,
+      color: 0xEAE5E3,
       roughness: 0.18,
       metalness: 0.0,
       clearcoat: 0.4,
       clearcoatRoughness: 0.15,
-      transmission: 0.08,
-      thickness: 1.0,
-      ior: 1.45,
     });
 
     const chromeMat = new THREE.MeshStandardMaterial({
-      color: 0xd8d4cc, roughness: 0.08, metalness: 0.9,
+      color: 0xE5E4E6, roughness: 0.08, metalness: 0.9,
     });
 
     const dpadMat = new THREE.MeshStandardMaterial({
-      color: 0xc8bfb4, roughness: 0.5, metalness: 0.05,
+      color: 0xDCDDDD, roughness: 0.5, metalness: 0.05,
     });
 
     const smallBtnMat = new THREE.MeshStandardMaterial({
-      color: 0xbab2a8, roughness: 0.45, metalness: 0.08,
+      color: 0xE5E4E6, roughness: 0.45, metalness: 0.08,
     });
 
     // ── Product Group ──────────────────────────
@@ -314,10 +311,10 @@
     const fbGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.03, 16);
     fbGeo.rotateX(Math.PI / 2);
     const fbData = [
-      [0, 0.2, 0xa0b888],    // top — matcha
-      [0.2, 0, 0xdfa8a8],    // right — sakura
-      [0, -0.2, 0x90b8d0],   // bottom — sora
-      [-0.2, 0, 0xb098c0],   // left — wisteria
+      [0, 0.2, 0xF7FCFE],    // top — unoharairo (faint blue-white)
+      [0.2, 0, 0xEAE5E3],    // right — soshoku (warm base)
+      [0, -0.2, 0xE7E7EB],   // bottom — murasakisuishiyou (purple water)
+      [-0.2, 0, 0xFBFAF5],   // left — kinariiro (dough)
     ];
     for (const [dx, dy, color] of fbData) {
       const btn = new THREE.Mesh(fbGeo,
@@ -330,7 +327,7 @@
     // ── Analog Nub ─────────────────────────────
     const nubBase = new THREE.Mesh(
       new THREE.CylinderGeometry(0.1, 0.1, 0.012, 24),
-      new THREE.MeshStandardMaterial({ color: 0xb0a898, roughness: 0.65, metalness: 0.05 })
+      new THREE.MeshStandardMaterial({ color: 0xDCDDDD, roughness: 0.6, metalness: 0.05 })
     );
     nubBase.rotateX(Math.PI / 2);
     nubBase.position.set(-1.65, -0.5, 0.26);
@@ -338,7 +335,7 @@
 
     const nubCap = new THREE.Mesh(
       new THREE.CylinderGeometry(0.065, 0.065, 0.02, 24),
-      new THREE.MeshStandardMaterial({ color: 0xa09888, roughness: 0.4, metalness: 0.1 })
+      new THREE.MeshStandardMaterial({ color: 0xDCDDDD, roughness: 0.4, metalness: 0.1 })
     );
     nubCap.rotateX(Math.PI / 2);
     nubCap.position.set(-1.65, -0.5, 0.275);
@@ -355,7 +352,7 @@
 
     // ── Shoulder Buttons ───────────────────────
     const shoulderGeo = new RoundedBoxGeometry(0.6, 0.055, 0.14, 3, 0.025);
-    const shoulderMat = new THREE.MeshStandardMaterial({ color: 0xbab0a4, roughness: 0.4, metalness: 0.1 });
+    const shoulderMat = new THREE.MeshStandardMaterial({ color: 0xDCDDDD, roughness: 0.4, metalness: 0.1 });
     for (const x of [-1.8, 1.8]) {
       const sh = new THREE.Mesh(shoulderGeo, shoulderMat);
       sh.position.set(x, 1.12, -0.04);
@@ -364,7 +361,7 @@
 
     // ── Speaker Grilles ────────────────────────
     const slotGeo = new RoundedBoxGeometry(0.12, 0.018, 0.004, 2, 0.008);
-    const slotMat = new THREE.MeshStandardMaterial({ color: 0xa09888, roughness: 0.85 });
+    const slotMat = new THREE.MeshStandardMaterial({ color: 0xDCDDDD, roughness: 0.85 });
     for (let i = 0; i < 5; i++) {
       for (const x of [-2.08, 2.08]) {
         const slot = new THREE.Mesh(slotGeo, slotMat);
@@ -428,7 +425,7 @@
     // ── Ground ─────────────────────────────────
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(30, 30),
-      new THREE.MeshStandardMaterial({ color: 0xeae6e0, roughness: 0.35, metalness: 0.0 })
+      new THREE.MeshStandardMaterial({ color: 0xF3F3F2, roughness: 0.35, metalness: 0.0 })
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -1.15;
@@ -453,7 +450,7 @@
     scene.add(contactShadow);
 
     // ── Interactions ───────────────────────────
-    let targetColor = new THREE.Color(0xd8ccb8);
+    let targetColor = new THREE.Color(0xEAE5E3);
     let screenOn = true;
     let targetScreenEmissive = 0.12;
     let targetScreenColor = new THREE.Color(1, 1, 1);
