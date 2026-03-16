@@ -7,7 +7,7 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: linear-gradient(180deg, #e8d8e8 0%, #f0e0e0 40%, #f8ece0 70%, #f5f0ea 100%);
+      background: linear-gradient(180deg, #2a2830 0%, #32303a 50%, #2e2c34 100%);
       overflow: hidden;
       font-family: 'Geist', system-ui, -apple-system, sans-serif;
       color: #333;
@@ -18,7 +18,7 @@
 
     .vignette {
       position: fixed; inset: 0; pointer-events: none;
-      background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.06) 100%);
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.3) 100%);
     }
 
     .product-info {
@@ -27,7 +27,7 @@
     .product-info h1 {
       font-family: 'Geist Mono', 'JetBrains Mono', monospace;
       font-size: 24px; font-weight: 500; letter-spacing: 0.06em;
-      color: #222; margin-bottom: 4px;
+      color: rgba(255,255,255,0.7); margin-bottom: 4px;
     }
     .product-info p {
       font-size: 11px; color: rgba(0,0,0,0.35); font-weight: 400;
@@ -40,7 +40,7 @@
       pointer-events: none;
       z-index: 1;
       background-image:
-        linear-gradient(178deg, transparent 49%, rgba(150,165,195,0.06) 49.5%, rgba(150,165,195,0.06) 50%, transparent 50.5%);
+        linear-gradient(178deg, transparent 49%, rgba(180,190,210,0.04) 49.5%, rgba(180,190,210,0.04) 50%, transparent 50.5%);
       background-size: 3px 60px;
       animation: rain-fall 0.35s linear infinite;
     }
@@ -100,10 +100,9 @@
     bgCv.width = 2; bgCv.height = 512;
     const bgCtx = bgCv.getContext('2d');
     const bgGrad = bgCtx.createLinearGradient(0, 0, 0, 512);
-    bgGrad.addColorStop(0, '#e0d0e4');
-    bgGrad.addColorStop(0.35, '#ecd8dc');
-    bgGrad.addColorStop(0.65, '#f4e4d8');
-    bgGrad.addColorStop(1, '#f2ede6');
+    bgGrad.addColorStop(0, '#2a2830');
+    bgGrad.addColorStop(0.4, '#32303a');
+    bgGrad.addColorStop(1, '#2e2c34');
     bgCtx.fillStyle = bgGrad;
     bgCtx.fillRect(0, 0, 2, 512);
     scene.background = new THREE.CanvasTexture(bgCv);
@@ -161,7 +160,7 @@
     // ── Cel outline (anime edge) ────────────────
     const outline = new THREE.Mesh(
       new RoundedBoxGeometry(5.0, 2.2, 0.5, 6, 0.25),
-      new THREE.MeshBasicMaterial({ color: 0x3a3040, side: THREE.BackSide })
+      new THREE.MeshBasicMaterial({ color: 0x18141e, side: THREE.BackSide })
     );
     outline.scale.multiplyScalar(1.025);
     product.add(outline);
@@ -461,7 +460,7 @@
     product.add(powerBtn);
 
     // ── Lighting ───────────────────────────────
-    const key = new THREE.DirectionalLight(0xfff8ee, 2.0);
+    const key = new THREE.DirectionalLight(0xe8e0f0, 1.8);
     key.position.set(4, 5, 6);
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
@@ -471,15 +470,15 @@
     key.shadow.radius = 4; key.shadow.bias = -0.0005;
     scene.add(key);
 
-    scene.add(new THREE.DirectionalLight(0xfff8f0, 0.6).translateX(-4).translateY(3).translateZ(2));
-    scene.add(new THREE.DirectionalLight(0xfff5ea, 0.8).translateY(2).translateZ(-5));
-    scene.add(new THREE.HemisphereLight(0xf5f0e8, 0xddd8d0, 0.5));
-    scene.add(new THREE.AmbientLight(0xfff8f0, 0.3));
+    scene.add(new THREE.DirectionalLight(0xd8d0e0, 0.5).translateX(-4).translateY(3).translateZ(2));
+    scene.add(new THREE.DirectionalLight(0xe0d8e8, 0.6).translateY(2).translateZ(-5));
+    scene.add(new THREE.HemisphereLight(0x3a3440, 0x1a181e, 0.4));
+    scene.add(new THREE.AmbientLight(0xc8c0d0, 0.25));
 
     // ── Ground ─────────────────────────────────
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(30, 30),
-      new THREE.MeshStandardMaterial({ color: 0xF3F3F2, roughness: 0.35, metalness: 0.0 })
+      new THREE.MeshStandardMaterial({ color: 0x28262e, roughness: 0.4, metalness: 0.0 })
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -1.15;
