@@ -126,11 +126,13 @@
 
     // ── Materials ──────────────────────────────
     const bodyMat = new THREE.MeshPhysicalMaterial({
-      color: 0xEAE5E3,
-      roughness: 0.18,
+      color: 0xc8b8d0,
+      roughness: 0.1,
       metalness: 0.0,
-      clearcoat: 0.4,
-      clearcoatRoughness: 0.15,
+      clearcoat: 0.7,
+      clearcoatRoughness: 0.05,
+      transparent: true,
+      opacity: 0.55,
     });
 
     const chromeMat = new THREE.MeshStandardMaterial({
@@ -165,6 +167,21 @@
     outline.scale.multiplyScalar(1.025);
     product.add(outline);
 
+    // ── Internals (visible through transparent shell) ──
+    const board = new THREE.Mesh(
+      new THREE.BoxGeometry(3.5, 1.5, 0.02),
+      new THREE.MeshStandardMaterial({ color: 0x1a7a3a, roughness: 0.7, metalness: 0.1, side: THREE.DoubleSide })
+    );
+    product.add(board);
+    for (const [x, y, bw, bh] of [[0.6,0.1,0.4,0.4], [-0.4,0.3,0.22,0.15], [-0.4,-0.15,0.22,0.15]]) {
+      const c = new THREE.Mesh(
+        new THREE.BoxGeometry(bw, bh, 0.035),
+        new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.4, metalness: 0.5 })
+      );
+      c.position.set(x, y, 0.025);
+      product.add(c);
+    }
+
     // ── Screen ─────────────────────────────────
     function roundedRect(w, h, r) {
       const s = new THREE.Shape();
@@ -194,9 +211,9 @@
 
       // Soft blue sky
       const sky = ctx.createLinearGradient(0, 0, 0, h * 0.6);
-      sky.addColorStop(0, '#5a9fd0');
-      sky.addColorStop(0.4, '#80b8e0');
-      sky.addColorStop(1, '#b8d8f0');
+      sky.addColorStop(0, '#4090d0');
+      sky.addColorStop(0.4, '#60b0e8');
+      sky.addColorStop(1, '#a0d4f8');
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, w, h);
 
@@ -226,7 +243,7 @@
       drawCloud(380, 110, 2);
 
       // Distant hills (pale green-blue)
-      ctx.fillStyle = '#90b8a0';
+      ctx.fillStyle = '#78c090';
       ctx.beginPath();
       ctx.moveTo(0, h * 0.6);
       for (let x = 0; x <= w; x += 3) {
@@ -237,7 +254,7 @@
       ctx.fill();
 
       // Middle hills (warm green)
-      ctx.fillStyle = '#70a860';
+      ctx.fillStyle = '#58b850';
       ctx.beginPath();
       ctx.moveTo(0, h * 0.7);
       for (let x = 0; x <= w; x += 3) {
@@ -248,7 +265,7 @@
       ctx.fill();
 
       // Foreground meadow
-      ctx.fillStyle = '#58a048';
+      ctx.fillStyle = '#40a838';
       ctx.beginPath();
       ctx.moveTo(0, h * 0.82);
       for (let x = 0; x <= w; x += 3) {
@@ -331,8 +348,8 @@
       map: createScreenTexture(),
       roughness: 0.3,
       metalness: 0.0,
-      emissive: 0x6898b8,
-      emissiveIntensity: 0.08,
+      emissive: 0x80b0d0,
+      emissiveIntensity: 0.35,
     });
 
     const screen = new THREE.Mesh(
