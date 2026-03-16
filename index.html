@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meridian Clock — Product Explorer</title>
+  <title>Meridian Terminal — Product Explorer</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -47,7 +47,7 @@
       bottom: 44px;
       right: 40px;
       display: flex;
-      gap: 14px;
+      gap: 12px;
       z-index: 10;
     }
     .swatch {
@@ -65,24 +65,10 @@
       outline-offset: 2px;
     }
 
-    .hint {
-      position: fixed;
-      bottom: 50%;
-      left: 50%;
-      transform: translate(-50%, 50%);
-      font-size: 12px;
-      color: rgba(255,255,255,0.2);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      transition: opacity 0.8s ease;
-      pointer-events: none;
-    }
-    .hint.hidden { opacity: 0; }
-
     @media (max-width: 768px) {
       .product-info { bottom: 24px; left: 24px; }
       .product-info h1 { font-size: 18px; }
-      .color-swatches { bottom: 28px; right: 24px; gap: 12px; }
+      .color-swatches { bottom: 28px; right: 24px; gap: 10px; }
       .swatch { width: 22px; height: 22px; }
     }
   </style>
@@ -97,10 +83,11 @@
   </div>
 
   <div class="color-swatches">
-    <button class="swatch active" data-color="#2a2a2a" style="background:#2a2a2a" aria-label="Charcoal"></button>
-    <button class="swatch" data-color="#1a2332" style="background:#1a2332" aria-label="Midnight blue"></button>
-    <button class="swatch" data-color="#2d1f1f" style="background:#2d1f1f" aria-label="Oxblood"></button>
-    <button class="swatch" data-color="#e8e4dc" style="background:#e8e4dc" aria-label="Bone"></button>
+    <button class="swatch active" data-color="#00b4d8" style="background:#00b4d8" aria-label="Bondi Blue"></button>
+    <button class="swatch" data-color="#ff8c42" style="background:#ff8c42" aria-label="Tangerine"></button>
+    <button class="swatch" data-color="#7b4baf" style="background:#7b4baf" aria-label="Grape"></button>
+    <button class="swatch" data-color="#7cb342" style="background:#7cb342" aria-label="Lime"></button>
+    <button class="swatch" data-color="#ef5350" style="background:#ef5350" aria-label="Strawberry"></button>
   </div>
 
   <script type="importmap">
@@ -136,19 +123,18 @@
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x111111);
 
-    // Environment map for chrome reflections
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     pmrem.dispose();
 
     // ── Camera & Controls ──────────────────────
     const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.1, 100);
-    camera.position.set(4, 2.5, 5);
+    camera.position.set(4, 2, 6);
 
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.target.set(0, 0.15, 0);
+    controls.target.set(0, 0.2, 0);
     controls.minDistance = 3;
     controls.maxDistance = 12;
     controls.maxPolarAngle = Math.PI * 0.85;
@@ -158,21 +144,22 @@
     // ── Post-processing ────────────────────────
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-
     const bloom = new UnrealBloomPass(
       new THREE.Vector2(innerWidth, innerHeight),
-      0.4,   // strength — subtle glow, not neon
-      0.6,   // radius — how far the bloom spreads
-      0.85   // threshold — only bright highlights bloom
+      0.4, 0.6, 0.75
     );
     composer.addPass(bloom);
     composer.addPass(new OutputPass());
 
     // ── Materials ──────────────────────────────
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0x2a2a2a,
-      roughness: 0.82,
-      metalness: 0.05,
+
+    // Fruity translucent shell
+    const bodyMat = new THREE.MeshPhysicalMaterial({
+      color: 0x00b4d8,
+      roughness: 0.08,
+      metalness: 0.0,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.03,
     });
 
     const chromeMat = new THREE.MeshStandardMaterial({
@@ -183,36 +170,90 @@
       emissiveIntensity: 0.15,
     });
 
+    const screenFrameMat = new THREE.MeshStandardMaterial({
+      color: 0x0a0a0a,
+      roughness: 0.92,
+      metalness: 0.05,
+    });
+
+    // Terminal-green glowing hands
+    const handMat = new THREE.MeshStandardMaterial({
+      color: 0x00dd77,
+      roughness: 0.3,
+      metalness: 0.4,
+      emissive: 0x00ff88,
+      emissiveIntensity: 0.6,
+      transparent: true,
+    });
+
+    const secondHandMat = new THREE.MeshStandardMaterial({
+      color: 0x00ffaa,
+      roughness: 0.3,
+      metalness: 0.3,
+      emissive: 0x00ffcc,
+      emissiveIntensity: 0.8,
+      transparent: true,
+    });
+
     const darkMetalMat = new THREE.MeshStandardMaterial({
       color: 0x1a1a1a,
       roughness: 0.3,
       metalness: 0.7,
-      transparent: true,
     });
 
     const redMat = new THREE.MeshStandardMaterial({
       color: 0xcc2222,
       roughness: 0.35,
       metalness: 0.1,
-      transparent: true,
     });
 
     // ── Product Group ──────────────────────────
     const product = new THREE.Group();
     scene.add(product);
 
-    // ── Body ───────────────────────────────────
+    // ── Body (tall, rounded, Mac-like) ─────────
     const body = new THREE.Mesh(
-      new RoundedBoxGeometry(3.5, 2.2, 1.6, 8, 0.4),
+      new RoundedBoxGeometry(2.4, 3.0, 2.0, 8, 0.55),
       bodyMat
     );
     body.castShadow = true;
     body.receiveShadow = true;
     product.add(body);
 
-    // ── Clock Face ─────────────────────────────
-    const CLOCK_R = 0.7;
-    const CLOCK_Z = 0.81;
+    // ── Handle (arch on top) ───────────────────
+    const handleGeo = new THREE.TorusGeometry(0.35, 0.05, 16, 32, Math.PI);
+    const handle = new THREE.Mesh(handleGeo, bodyMat);
+    handle.rotation.x = -Math.PI / 2;
+    handle.position.set(0, 1.48, 0);
+    handle.castShadow = true;
+    product.add(handle);
+
+    // ── Screen Frame (dark inset) ──────────────
+    function roundedRect(w, h, r) {
+      const s = new THREE.Shape();
+      const hw = w / 2, hh = h / 2;
+      s.moveTo(-hw + r, -hh);
+      s.lineTo(hw - r, -hh);
+      s.quadraticCurveTo(hw, -hh, hw, -hh + r);
+      s.lineTo(hw, hh - r);
+      s.quadraticCurveTo(hw, hh, hw - r, hh);
+      s.lineTo(-hw + r, hh);
+      s.quadraticCurveTo(-hw, hh, -hw, hh - r);
+      s.lineTo(-hw, -hh + r);
+      s.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
+      return s;
+    }
+
+    const screenFrame = new THREE.Mesh(
+      new THREE.ShapeGeometry(roundedRect(1.9, 1.9, 0.18)),
+      screenFrameMat
+    );
+    screenFrame.position.set(0, 0.3, 1.003);
+    product.add(screenFrame);
+
+    // ── Clock Face (CRT terminal style) ────────
+    const CLOCK_R = 0.72;
+    const CLOCK_Z = 1.008;
 
     function createClockTexture() {
       const s = 1024;
@@ -220,14 +261,24 @@
       cv.width = s; cv.height = s;
       const ctx = cv.getContext('2d');
 
-      // Warm white dial
-      ctx.fillStyle = '#f0ece4';
+      // Dark CRT background
+      ctx.fillStyle = '#050f08';
       ctx.beginPath();
       ctx.arc(s / 2, s / 2, s / 2 - 2, 0, Math.PI * 2);
       ctx.fill();
 
+      // Subtle scanlines
+      ctx.strokeStyle = 'rgba(0,255,136,0.025)';
+      ctx.lineWidth = 1;
+      for (let y = 0; y < s; y += 4) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(s, y);
+        ctx.stroke();
+      }
+
       // Inner ring
-      ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+      ctx.strokeStyle = 'rgba(0,255,136,0.1)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.arc(s / 2, s / 2, s * 0.46, 0, Math.PI * 2);
@@ -239,8 +290,8 @@
         const hour = i % 5 === 0;
         const r0 = s * (hour ? 0.38 : 0.42);
         const r1 = s * 0.46;
-        ctx.strokeStyle = hour ? '#222' : '#bbb';
-        ctx.lineWidth = hour ? 4.5 : 1.5;
+        ctx.strokeStyle = hour ? '#00ff88' : 'rgba(0,255,136,0.25)';
+        ctx.lineWidth = hour ? 4 : 1.5;
         ctx.beginPath();
         ctx.moveTo(s / 2 + Math.cos(a) * r0, s / 2 + Math.sin(a) * r0);
         ctx.lineTo(s / 2 + Math.cos(a) * r1, s / 2 + Math.sin(a) * r1);
@@ -248,8 +299,8 @@
       }
 
       // Numbers
-      ctx.fillStyle = '#222';
-      ctx.font = '600 48px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#00ff88';
+      ctx.font = '600 48px "Courier New", monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       for (let i = 1; i <= 12; i++) {
@@ -261,41 +312,44 @@
       return new THREE.CanvasTexture(cv);
     }
 
+    const clockTexture = createClockTexture();
     const clockFaceMat = new THREE.MeshStandardMaterial({
-      map: createClockTexture(),
-      roughness: 0.25,
+      map: clockTexture,
+      roughness: 0.3,
       metalness: 0.0,
-      emissive: 0xffffff,
-      emissiveIntensity: 0.0,
+      emissive: 0x00ff88,
+      emissiveIntensity: 0.4,
     });
+
     const clockFace = new THREE.Mesh(
       new THREE.CircleGeometry(CLOCK_R, 64),
       clockFaceMat
     );
-    clockFace.position.z = CLOCK_Z;
+    clockFace.position.set(0, 0.3, CLOCK_Z);
     product.add(clockFace);
 
-    // Glass cover
+    // Glass (slight green CRT tint)
     const glass = new THREE.Mesh(
       new THREE.CircleGeometry(CLOCK_R - 0.01, 64),
       new THREE.MeshPhysicalMaterial({
         transparent: true,
-        opacity: 0.08,
+        opacity: 0.06,
         roughness: 0.0,
         metalness: 0.1,
         clearcoat: 1.0,
         clearcoatRoughness: 0.05,
+        color: 0x003322,
       })
     );
-    glass.position.z = CLOCK_Z + 0.035;
+    glass.position.set(0, 0.3, 1.05);
     product.add(glass);
 
     // Chrome bezel
     const bezel = new THREE.Mesh(
-      new THREE.TorusGeometry(CLOCK_R + 0.01, 0.045, 24, 64),
+      new THREE.TorusGeometry(CLOCK_R + 0.01, 0.035, 24, 64),
       chromeMat
     );
-    bezel.position.z = CLOCK_Z + 0.025;
+    bezel.position.set(0, 0.3, 1.01);
     product.add(bezel);
 
     // ── Clock Hands ────────────────────────────
@@ -303,55 +357,78 @@
       const g = new THREE.BoxGeometry(w, len, thick);
       g.translate(0, len / 2, 0);
       const m = new THREE.Mesh(g, mat);
-      m.position.z = CLOCK_Z + 0.02;
+      m.position.set(0, 0.3, CLOCK_Z + 0.012);
       return m;
     }
 
-    const hourHand = makeHand(0.045, 0.3, 0.015, darkMetalMat);
-    const minuteHand = makeHand(0.03, 0.45, 0.012, darkMetalMat);
+    const hourHand = makeHand(0.04, 0.3, 0.012, handMat);
+    const minuteHand = makeHand(0.028, 0.45, 0.01, handMat);
 
-    // Second hand with counterweight tail
-    const secGeo = new THREE.BoxGeometry(0.014, 0.55, 0.008);
-    secGeo.translate(0, 0.18, 0);
-    const secondHand = new THREE.Mesh(secGeo, redMat);
-    secondHand.position.z = CLOCK_Z + 0.025;
+    const secGeo = new THREE.BoxGeometry(0.012, 0.52, 0.006);
+    secGeo.translate(0, 0.17, 0);
+    const secondHand = new THREE.Mesh(secGeo, secondHandMat);
+    secondHand.position.set(0, 0.3, CLOCK_Z + 0.017);
 
     product.add(hourHand, minuteHand, secondHand);
 
     // Center cap
-    const capGeo = new THREE.CylinderGeometry(0.028, 0.028, 0.014, 16);
+    const capGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.012, 16);
     capGeo.rotateX(Math.PI / 2);
     const cap = new THREE.Mesh(capGeo, chromeMat);
-    cap.position.z = CLOCK_Z + 0.03;
+    cap.position.set(0, 0.3, CLOCK_Z + 0.022);
     product.add(cap);
+
+    // ── Brand Mark (chin area) ─────────────────
+    function createBrandTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 256; cv.height = 48;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.font = '300 18px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('MERIDIAN', 128, 24);
+      return new THREE.CanvasTexture(cv);
+    }
+
+    const brandMark = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.8, 0.15),
+      new THREE.MeshBasicMaterial({ map: createBrandTexture(), transparent: true, depthWrite: false })
+    );
+    brandMark.position.set(0, -0.7, 1.003);
+    product.add(brandMark);
 
     // ── Red Button ─────────────────────────────
     const btnBase = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.055, 0.055, 0.08, 24),
+      new THREE.CylinderGeometry(0.05, 0.05, 0.07, 24),
       darkMetalMat
     );
-    btnBase.position.set(-0.95, 1.14, 0);
+    btnBase.position.set(-0.6, 1.53, 0);
     product.add(btnBase);
 
     const button = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.07, 0.075, 0.07, 24),
+      new THREE.CylinderGeometry(0.065, 0.07, 0.06, 24),
       redMat
     );
-    const BTN_Y = 1.19;
-    button.position.set(-0.95, BTN_Y, 0);
+    const BTN_Y = 1.57;
+    button.position.set(-0.6, BTN_Y, 0);
     button.castShadow = true;
     product.add(button);
 
-    // ── Feet ───────────────────────────────────
-    const footGeo = new THREE.CylinderGeometry(0.1, 0.115, 0.07, 16);
-    const footMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6, metalness: 0.3 });
-    const footSpots = [[-1.2, -1.135, 0.45], [1.2, -1.135, 0.45], [-1.2, -1.135, -0.45], [1.2, -1.135, -0.45]];
-    for (const [x, y, z] of footSpots) {
-      const f = new THREE.Mesh(footGeo, footMat);
-      f.position.set(x, y, z);
-      f.castShadow = true;
-      product.add(f);
-    }
+    // ── Base ───────────────────────────────────
+    const base = new THREE.Mesh(
+      new RoundedBoxGeometry(2.0, 0.08, 1.4, 4, 0.04),
+      new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7, metalness: 0.2 })
+    );
+    base.position.set(0, -1.54, 0);
+    base.castShadow = true;
+    base.receiveShadow = true;
+    product.add(base);
+
+    // ── Inner Glow (visible in reflections) ────
+    const innerGlow = new THREE.PointLight(0x00ff88, 0, 3);
+    innerGlow.position.set(0, 0.3, 0.5);
+    product.add(innerGlow);
 
     // ── Lighting ───────────────────────────────
     const key = new THREE.DirectionalLight(0xfff5e6, 2.5);
@@ -368,14 +445,8 @@
     key.shadow.bias = -0.0005;
     scene.add(key);
 
-    const fill = new THREE.DirectionalLight(0xcce0ff, 0.7);
-    fill.position.set(-4, 3, 2);
-    scene.add(fill);
-
-    const rim = new THREE.DirectionalLight(0xffffff, 1.2);
-    rim.position.set(0, 2, -5);
-    scene.add(rim);
-
+    scene.add(new THREE.DirectionalLight(0xcce0ff, 0.7).translateX(-4).translateY(3).translateZ(2));
+    scene.add(new THREE.DirectionalLight(0xffffff, 1.2).translateY(2).translateZ(-5));
     scene.add(new THREE.AmbientLight(0x404040, 0.4));
 
     // ── Ground & Shadow ────────────────────────
@@ -384,11 +455,11 @@
       new THREE.ShadowMaterial({ opacity: 0.2 })
     );
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -1.17;
+    ground.position.y = -1.58;
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // Soft contact shadow
+    // Contact shadow
     function createContactShadow() {
       const s = 256;
       const cv = document.createElement('canvas');
@@ -404,25 +475,27 @@
     }
 
     const contactShadow = new THREE.Mesh(
-      new THREE.PlaneGeometry(4, 2.5),
+      new THREE.PlaneGeometry(3.5, 2.5),
       new THREE.MeshBasicMaterial({ map: createContactShadow(), transparent: true, depthWrite: false })
     );
     contactShadow.rotation.x = -Math.PI / 2;
-    contactShadow.position.y = -1.165;
+    contactShadow.position.y = -1.575;
     scene.add(contactShadow);
 
     // ── Interactions ───────────────────────────
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
-    let targetColor = new THREE.Color(0x2a2a2a);
+    let targetColor = new THREE.Color(0x00b4d8);
 
     // Clock on/off state
     let clockOn = true;
-    let flashTime = 0;              // timestamp of last toggle
-    const FLASH_DURATION = 600;     // ms for the shine effect
-    const offColor = new THREE.Color(0x1a1918);
-    const onColor = new THREE.Color(0xf0ece4);
-    let targetFaceColor = onColor.clone();
+    let flashTime = 0;
+    const FLASH_DURATION = 600;
+    let targetClockEmissive = 0.4;
+    let targetClockColor = new THREE.Color(1, 1, 1);
+    let targetHandEmissive = 0.6;
+    let targetSecondEmissive = 0.8;
+    let targetHandOpacity = 1.0;
 
     // Button click — toggle clock
     canvas.addEventListener('pointerdown', (e) => {
@@ -430,14 +503,24 @@
       pointer.y = -(e.clientY / innerHeight) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
       if (raycaster.intersectObject(button).length) {
-        // Press animation
-        button.position.y = BTN_Y - 0.035;
+        button.position.y = BTN_Y - 0.03;
         setTimeout(() => { button.position.y = BTN_Y; }, 120);
 
-        // Toggle clock
         clockOn = !clockOn;
         flashTime = Date.now();
-        targetFaceColor.copy(clockOn ? onColor : offColor);
+        if (clockOn) {
+          targetClockEmissive = 0.4;
+          targetClockColor.set(1, 1, 1);
+          targetHandEmissive = 0.6;
+          targetSecondEmissive = 0.8;
+          targetHandOpacity = 1.0;
+        } else {
+          targetClockEmissive = 0.0;
+          targetClockColor.set(0, 0, 0);
+          targetHandEmissive = 0.0;
+          targetSecondEmissive = 0.0;
+          targetHandOpacity = 0.0;
+        }
       }
     });
 
@@ -464,7 +547,7 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      // Real-time clock (only update hands when on)
+      // Real-time clock (only tick when on)
       if (clockOn) {
         const now = new Date();
         const s = now.getSeconds() + now.getMilliseconds() / 1000;
@@ -475,40 +558,43 @@
         hourHand.rotation.z = -(h / 12) * Math.PI * 2;
       }
 
-      // Fade hands visibility
-      const handTarget = clockOn ? 1.0 : 0.0;
-      hourHand.material.opacity += (handTarget - hourHand.material.opacity) * 0.08;
-      minuteHand.material.opacity += (handTarget - minuteHand.material.opacity) * 0.08;
-      secondHand.material.opacity += (handTarget - secondHand.material.opacity) * 0.08;
-      const handsVisible = hourHand.material.opacity > 0.01;
+      // Smooth transitions for clock face
+      clockFaceMat.emissiveIntensity += (targetClockEmissive - clockFaceMat.emissiveIntensity) * 0.06;
+      clockFaceMat.color.lerp(targetClockColor, 0.06);
+
+      // Smooth transitions for hands
+      handMat.emissiveIntensity += (targetHandEmissive - handMat.emissiveIntensity) * 0.06;
+      handMat.opacity += (targetHandOpacity - handMat.opacity) * 0.08;
+      secondHandMat.emissiveIntensity += (targetSecondEmissive - secondHandMat.emissiveIntensity) * 0.06;
+      secondHandMat.opacity += (targetHandOpacity - secondHandMat.opacity) * 0.08;
+
+      const handsVisible = handMat.opacity > 0.01;
       hourHand.visible = handsVisible;
       minuteHand.visible = handsVisible;
       secondHand.visible = handsVisible;
       cap.visible = handsVisible;
 
-      // Clock face color transition (on = warm white, off = dark)
-      clockFaceMat.color.lerp(targetFaceColor, 0.06);
-
-      // Flash / shine effect on toggle
-      const flashElapsed = Date.now() - flashTime;
-      if (flashElapsed < FLASH_DURATION) {
-        // Sine pulse: rises fast, falls smooth
-        const t = flashElapsed / FLASH_DURATION;
-        const pulse = Math.sin(t * Math.PI) * (1 - t * 0.3);
-        // Spike bloom strength
-        bloom.strength = BASE_BLOOM + pulse * 1.8;
-        // Clock face emissive flash
-        clockFaceMat.emissiveIntensity = pulse * (clockOn ? 0.8 : 0.3);
-        // Chrome bezel flares
-        chromeMat.emissiveIntensity = 0.15 + pulse * 0.6;
-      } else {
-        // Settle back
-        bloom.strength += (BASE_BLOOM - bloom.strength) * 0.1;
-        clockFaceMat.emissiveIntensity *= 0.9;
-        chromeMat.emissiveIntensity += (0.15 - chromeMat.emissiveIntensity) * 0.1;
+      // Subtle CRT flicker when on
+      if (clockOn && Date.now() - flashTime > FLASH_DURATION) {
+        clockFaceMat.emissiveIntensity += (Math.random() - 0.5) * 0.015;
       }
 
-      // Smooth body color transition
+      // Flash / shine on toggle
+      const flashElapsed = Date.now() - flashTime;
+      if (flashElapsed < FLASH_DURATION) {
+        const t = flashElapsed / FLASH_DURATION;
+        const pulse = Math.sin(t * Math.PI) * (1 - t * 0.3);
+        bloom.strength = BASE_BLOOM + pulse * 2.0;
+        clockFaceMat.emissiveIntensity += pulse * 0.9;
+        chromeMat.emissiveIntensity = 0.15 + pulse * 0.7;
+        innerGlow.intensity = pulse * 4;
+      } else {
+        bloom.strength += (BASE_BLOOM - bloom.strength) * 0.1;
+        chromeMat.emissiveIntensity += (0.15 - chromeMat.emissiveIntensity) * 0.1;
+        innerGlow.intensity *= 0.9;
+      }
+
+      // Body color
       bodyMat.color.lerp(targetColor, 0.08);
 
       // Subtle float
