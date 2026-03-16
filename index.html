@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meridian Clock — Product Explorer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      overflow: hidden;
+      font-family: 'Geist', system-ui, -apple-system, sans-serif;
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
+    }
+    canvas { display: block; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%);
+    }
+
+    .product-info {
+      position: fixed;
+      bottom: 40px;
+      left: 40px;
+      z-index: 10;
+    }
+    .product-info h1 {
+      font-family: 'Geist Mono', 'JetBrains Mono', monospace;
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+    .product-info p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.35);
+      font-weight: 400;
+    }
+
+    .color-swatches {
+      position: fixed;
+      bottom: 44px;
+      right: 40px;
+      display: flex;
+      gap: 14px;
+      z-index: 10;
+    }
+    .swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      transition: border-color 0.3s, transform 0.2s;
+    }
+    .swatch:hover { transform: scale(1.2); }
+    .swatch.active { border-color: rgba(255,255,255,0.6); }
+    .swatch:focus-visible {
+      outline: 2px solid rgba(255,255,255,0.8);
+      outline-offset: 2px;
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 50%;
+      left: 50%;
+      transform: translate(-50%, 50%);
+      font-size: 12px;
+      color: rgba(255,255,255,0.2);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: opacity 0.8s ease;
+      pointer-events: none;
+    }
+    .hint.hidden { opacity: 0; }
+
+    @media (max-width: 768px) {
+      .product-info { bottom: 24px; left: 24px; }
+      .product-info h1 { font-size: 18px; }
+      .color-swatches { bottom: 28px; right: 24px; gap: 12px; }
+      .swatch { width: 22px; height: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div class="vignette"></div>
+
+  <div class="product-info">
+    <h1>MERIDIAN</h1>
+    <p>Drag to explore</p>
+  </div>
+
+  <div class="color-swatches">
+    <button class="swatch active" data-color="#2a2a2a" style="background:#2a2a2a" aria-label="Charcoal"></button>
+    <button class="swatch" data-color="#1a2332" style="background:#1a2332" aria-label="Midnight blue"></button>
+    <button class="swatch" data-color="#2d1f1f" style="background:#2d1f1f" aria-label="Oxblood"></button>
+    <button class="swatch" data-color="#e8e4dc" style="background:#e8e4dc" aria-label="Bone"></button>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+    // ── Renderer ───────────────────────────────
+    const canvas = document.getElementById('c');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // ── Scene ──────────────────────────────────
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x111111);
+
+    // Environment map for chrome reflections
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    pmrem.dispose();
+
+    // ── Camera & Controls ──────────────────────
+    const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(4, 2.5, 5);
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.set(0, 0.15, 0);
+    controls.minDistance = 3;
+    controls.maxDistance = 12;
+    controls.maxPolarAngle = Math.PI * 0.85;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.4;
+
+    // ── Post-processing ────────────────────────
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+
+    const bloom = new UnrealBloomPass(
+      new THREE.Vector2(innerWidth, innerHeight),
+      0.4,   // strength — subtle glow, not neon
+      0.6,   // radius — how far the bloom spreads
+      0.85   // threshold — only bright highlights bloom
+    );
+    composer.addPass(bloom);
+    composer.addPass(new OutputPass());
+
+    // ── Materials ──────────────────────────────
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: 0x2a2a2a,
+      roughness: 0.82,
+      metalness: 0.05,
+    });
+
+    const chromeMat = new THREE.MeshStandardMaterial({
+      color: 0xeeeeee,
+      roughness: 0.03,
+      metalness: 0.99,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.15,
+    });
+
+    const darkMetalMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1a1a,
+      roughness: 0.3,
+      metalness: 0.7,
+    });
+
+    const redMat = new THREE.MeshStandardMaterial({
+      color: 0xcc2222,
+      roughness: 0.35,
+      metalness: 0.1,
+    });
+
+    // ── Product Group ──────────────────────────
+    const product = new THREE.Group();
+    scene.add(product);
+
+    // ── Body ───────────────────────────────────
+    const body = new THREE.Mesh(
+      new RoundedBoxGeometry(3.5, 2.2, 1.6, 8, 0.4),
+      bodyMat
+    );
+    body.castShadow = true;
+    body.receiveShadow = true;
+    product.add(body);
+
+    // ── Clock Face ─────────────────────────────
+    const CLOCK_R = 0.7;
+    const CLOCK_Z = 0.81;
+
+    function createClockTexture() {
+      const s = 1024;
+      const cv = document.createElement('canvas');
+      cv.width = s; cv.height = s;
+      const ctx = cv.getContext('2d');
+
+      // Warm white dial
+      ctx.fillStyle = '#f0ece4';
+      ctx.beginPath();
+      ctx.arc(s / 2, s / 2, s / 2 - 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner ring
+      ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(s / 2, s / 2, s * 0.46, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Tick marks
+      for (let i = 0; i < 60; i++) {
+        const a = (i / 60) * Math.PI * 2 - Math.PI / 2;
+        const hour = i % 5 === 0;
+        const r0 = s * (hour ? 0.38 : 0.42);
+        const r1 = s * 0.46;
+        ctx.strokeStyle = hour ? '#222' : '#bbb';
+        ctx.lineWidth = hour ? 4.5 : 1.5;
+        ctx.beginPath();
+        ctx.moveTo(s / 2 + Math.cos(a) * r0, s / 2 + Math.sin(a) * r0);
+        ctx.lineTo(s / 2 + Math.cos(a) * r1, s / 2 + Math.sin(a) * r1);
+        ctx.stroke();
+      }
+
+      // Numbers
+      ctx.fillStyle = '#222';
+      ctx.font = '600 48px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let i = 1; i <= 12; i++) {
+        const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+        const r = s * 0.32;
+        ctx.fillText(String(i), s / 2 + Math.cos(a) * r, s / 2 + Math.sin(a) * r);
+      }
+
+      return new THREE.CanvasTexture(cv);
+    }
+
+    const clockFace = new THREE.Mesh(
+      new THREE.CircleGeometry(CLOCK_R, 64),
+      new THREE.MeshStandardMaterial({ map: createClockTexture(), roughness: 0.25, metalness: 0.0 })
+    );
+    clockFace.position.z = CLOCK_Z;
+    product.add(clockFace);
+
+    // Glass cover
+    const glass = new THREE.Mesh(
+      new THREE.CircleGeometry(CLOCK_R - 0.01, 64),
+      new THREE.MeshPhysicalMaterial({
+        transparent: true,
+        opacity: 0.08,
+        roughness: 0.0,
+        metalness: 0.1,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.05,
+      })
+    );
+    glass.position.z = CLOCK_Z + 0.035;
+    product.add(glass);
+
+    // Chrome bezel
+    const bezel = new THREE.Mesh(
+      new THREE.TorusGeometry(CLOCK_R + 0.01, 0.045, 24, 64),
+      chromeMat
+    );
+    bezel.position.z = CLOCK_Z + 0.025;
+    product.add(bezel);
+
+    // ── Clock Hands ────────────────────────────
+    function makeHand(w, len, thick, mat) {
+      const g = new THREE.BoxGeometry(w, len, thick);
+      g.translate(0, len / 2, 0);
+      const m = new THREE.Mesh(g, mat);
+      m.position.z = CLOCK_Z + 0.02;
+      return m;
+    }
+
+    const hourHand = makeHand(0.045, 0.3, 0.015, darkMetalMat);
+    const minuteHand = makeHand(0.03, 0.45, 0.012, darkMetalMat);
+
+    // Second hand with counterweight tail
+    const secGeo = new THREE.BoxGeometry(0.014, 0.55, 0.008);
+    secGeo.translate(0, 0.18, 0);
+    const secondHand = new THREE.Mesh(secGeo, redMat);
+    secondHand.position.z = CLOCK_Z + 0.025;
+
+    product.add(hourHand, minuteHand, secondHand);
+
+    // Center cap
+    const capGeo = new THREE.CylinderGeometry(0.028, 0.028, 0.014, 16);
+    capGeo.rotateX(Math.PI / 2);
+    const cap = new THREE.Mesh(capGeo, chromeMat);
+    cap.position.z = CLOCK_Z + 0.03;
+    product.add(cap);
+
+    // ── Red Button ─────────────────────────────
+    const btnBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.055, 0.055, 0.08, 24),
+      darkMetalMat
+    );
+    btnBase.position.set(-0.95, 1.14, 0);
+    product.add(btnBase);
+
+    const button = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.07, 0.075, 0.07, 24),
+      redMat
+    );
+    const BTN_Y = 1.19;
+    button.position.set(-0.95, BTN_Y, 0);
+    button.castShadow = true;
+    product.add(button);
+
+    // ── Feet ───────────────────────────────────
+    const footGeo = new THREE.CylinderGeometry(0.1, 0.115, 0.07, 16);
+    const footMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6, metalness: 0.3 });
+    const footSpots = [[-1.2, -1.135, 0.45], [1.2, -1.135, 0.45], [-1.2, -1.135, -0.45], [1.2, -1.135, -0.45]];
+    for (const [x, y, z] of footSpots) {
+      const f = new THREE.Mesh(footGeo, footMat);
+      f.position.set(x, y, z);
+      f.castShadow = true;
+      product.add(f);
+    }
+
+    // ── Lighting ───────────────────────────────
+    const key = new THREE.DirectionalLight(0xfff5e6, 2.5);
+    key.position.set(4, 5, 6);
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.camera.near = 0.1;
+    key.shadow.camera.far = 20;
+    key.shadow.camera.left = -4;
+    key.shadow.camera.right = 4;
+    key.shadow.camera.top = 4;
+    key.shadow.camera.bottom = -4;
+    key.shadow.radius = 4;
+    key.shadow.bias = -0.0005;
+    scene.add(key);
+
+    const fill = new THREE.DirectionalLight(0xcce0ff, 0.7);
+    fill.position.set(-4, 3, 2);
+    scene.add(fill);
+
+    const rim = new THREE.DirectionalLight(0xffffff, 1.2);
+    rim.position.set(0, 2, -5);
+    scene.add(rim);
+
+    scene.add(new THREE.AmbientLight(0x404040, 0.4));
+
+    // ── Ground & Shadow ────────────────────────
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(30, 30),
+      new THREE.ShadowMaterial({ opacity: 0.2 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -1.17;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // Soft contact shadow
+    function createContactShadow() {
+      const s = 256;
+      const cv = document.createElement('canvas');
+      cv.width = s; cv.height = s;
+      const ctx = cv.getContext('2d');
+      const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+      g.addColorStop(0, 'rgba(0,0,0,0.25)');
+      g.addColorStop(0.6, 'rgba(0,0,0,0.08)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, s, s);
+      return new THREE.CanvasTexture(cv);
+    }
+
+    const contactShadow = new THREE.Mesh(
+      new THREE.PlaneGeometry(4, 2.5),
+      new THREE.MeshBasicMaterial({ map: createContactShadow(), transparent: true, depthWrite: false })
+    );
+    contactShadow.rotation.x = -Math.PI / 2;
+    contactShadow.position.y = -1.165;
+    scene.add(contactShadow);
+
+    // ── Interactions ───────────────────────────
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let targetColor = new THREE.Color(0x2a2a2a);
+
+    // Button click
+    canvas.addEventListener('pointerdown', (e) => {
+      pointer.x = (e.clientX / innerWidth) * 2 - 1;
+      pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      if (raycaster.intersectObject(button).length) {
+        button.position.y = BTN_Y - 0.035;
+        setTimeout(() => { button.position.y = BTN_Y; }, 120);
+      }
+    });
+
+    // Cursor on button hover
+    canvas.addEventListener('pointermove', (e) => {
+      pointer.x = (e.clientX / innerWidth) * 2 - 1;
+      pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      canvas.style.cursor = raycaster.intersectObject(button).length ? 'pointer' : '';
+    });
+
+    // Color swatches
+    document.querySelectorAll('.swatch').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+        el.classList.add('active');
+        targetColor.set(el.dataset.color);
+      });
+    });
+
+    // ── Animation Loop ─────────────────────────
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Real-time clock
+      const now = new Date();
+      const s = now.getSeconds() + now.getMilliseconds() / 1000;
+      const m = now.getMinutes() + s / 60;
+      const h = (now.getHours() % 12) + m / 60;
+      secondHand.rotation.z = -(s / 60) * Math.PI * 2;
+      minuteHand.rotation.z = -(m / 60) * Math.PI * 2;
+      hourHand.rotation.z = -(h / 12) * Math.PI * 2;
+
+      // Smooth color transition
+      bodyMat.color.lerp(targetColor, 0.08);
+
+      // Subtle float
+      product.position.y = Math.sin(Date.now() * 0.0008) * 0.008;
+
+      controls.update();
+      composer.render();
+    }
+    animate();
+
+    // ── Resize ─────────────────────────────────
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+      composer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+</body>
+</html>
