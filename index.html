@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PLY-01 — Product Explorer</title>
+  <title>Device 01</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -34,23 +34,29 @@
       letter-spacing: 0.12em; text-transform: uppercase;
     }
 
-    .color-swatches {
-      position: fixed; bottom: 44px; right: 40px;
-      display: flex; gap: 12px; z-index: 10;
+    .rain, .rain-2 {
+      position: fixed;
+      inset: -80px;
+      pointer-events: none;
+      z-index: 1;
+      background-image:
+        linear-gradient(178deg, transparent 49%, rgba(150,165,195,0.06) 49.5%, rgba(150,165,195,0.06) 50%, transparent 50.5%);
+      background-size: 3px 60px;
+      animation: rain-fall 0.35s linear infinite;
     }
-    .swatch {
-      width: 24px; height: 24px; border-radius: 50%;
-      border: 2px solid rgba(0,0,0,0.08); cursor: pointer;
-      transition: border-color 0.3s, transform 0.2s;
+    .rain-2 {
+      background-size: 5px 90px;
+      animation-duration: 0.5s;
+      opacity: 0.4;
     }
-    .swatch:hover { transform: scale(1.2); }
-    .swatch.active { border-color: rgba(0,0,0,0.45); }
-    .swatch:focus-visible { outline: 2px solid rgba(0,0,0,0.5); outline-offset: 2px; }
+    @keyframes rain-fall {
+      from { transform: translateY(-60px); }
+      to { transform: translateY(0); }
+    }
 
     @media (max-width: 768px) {
       .product-info { bottom: 24px; left: 24px; }
       .product-info h1 { font-size: 18px; }
-      .color-swatches { bottom: 28px; right: 24px; gap: 10px; }
     }
   </style>
 </head>
@@ -58,17 +64,11 @@
   <canvas id="c"></canvas>
   <div class="vignette"></div>
 
-  <div class="product-info">
-    <h1>PLY-01</h1>
-    <p>Meridian Systems</p>
-  </div>
+  <div class="rain"></div>
+  <div class="rain rain-2"></div>
 
-  <div class="color-swatches">
-    <button class="swatch active" data-color="#EAE5E3" style="background:#EAE5E3" aria-label="Soshoku"></button>
-    <button class="swatch" data-color="#FBFAF5" style="background:#FBFAF5" aria-label="Kinariiro"></button>
-    <button class="swatch" data-color="#F7FCFE" style="background:#F7FCFE" aria-label="Unoharairo"></button>
-    <button class="swatch" data-color="#E7E7EB" style="background:#E7E7EB" aria-label="Murasakisuishiyou"></button>
-    <button class="swatch" data-color="#DCDDDD" style="background:#DCDDDD" aria-label="Shironezu"></button>
+  <div class="product-info">
+    <h1>デバイス 01</h1>
   </div>
 
   <script type="importmap">
@@ -166,22 +166,6 @@
     outline.scale.multiplyScalar(1.025);
     product.add(outline);
 
-    // ── Internals (faintly visible) ────────────
-    const board = new THREE.Mesh(
-      new THREE.BoxGeometry(3.5, 1.5, 0.02),
-      new THREE.MeshStandardMaterial({ color: 0x1a7a3a, roughness: 0.7, metalness: 0.1, side: THREE.DoubleSide })
-    );
-    product.add(board);
-
-    for (const [x, y, w, h] of [[0.6, 0.1, 0.4, 0.4], [-0.4, 0.3, 0.22, 0.15], [-0.4, -0.15, 0.22, 0.15]]) {
-      const c = new THREE.Mesh(
-        new THREE.BoxGeometry(w, h, 0.035),
-        new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.4, metalness: 0.5 })
-      );
-      c.position.set(x, y, 0.025);
-      product.add(c);
-    }
-
     // ── Screen ─────────────────────────────────
     function roundedRect(w, h, r) {
       const s = new THREE.Shape();
@@ -202,169 +186,144 @@
     screenBezel.position.set(0, 0.05, 0.253);
     product.add(screenBezel);
 
-    // Screen display — anime sunset sky
+    // Screen display — Ghibli landscape
     function createScreenTexture() {
       const w = 1024, h = 512;
       const cv = document.createElement('canvas');
       cv.width = w; cv.height = h;
       const ctx = cv.getContext('2d');
 
-      // Rich sunset gradient
-      const sky = ctx.createLinearGradient(0, 0, 0, h);
-      sky.addColorStop(0, '#1a1038');
-      sky.addColorStop(0.15, '#38204a');
-      sky.addColorStop(0.3, '#803868');
-      sky.addColorStop(0.45, '#d86868');
-      sky.addColorStop(0.55, '#e89058');
-      sky.addColorStop(0.68, '#f0b868');
-      sky.addColorStop(0.82, '#f8d888');
-      sky.addColorStop(1, '#fce8a8');
+      // Soft blue sky
+      const sky = ctx.createLinearGradient(0, 0, 0, h * 0.6);
+      sky.addColorStop(0, '#5a9fd0');
+      sky.addColorStop(0.4, '#80b8e0');
+      sky.addColorStop(1, '#b8d8f0');
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, w, h);
 
-      // Stars in upper sky
-      ctx.fillStyle = '#ffffff';
-      for (let i = 0; i < 60; i++) {
-        const sx = Math.random() * w;
-        const sy = Math.random() * h * 0.3;
-        const sr = 0.5 + Math.random() * 1.5;
-        ctx.globalAlpha = 0.2 + Math.random() * 0.5;
-        ctx.beginPath();
-        ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-        ctx.fill();
+      // Fluffy cumulus clouds
+      function drawCloud(cx, cy, scale) {
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 0.9;
+        const r = 18 * scale;
+        for (const [dx, dy, dr] of [[0,0,r], [-r*.7,r*.15,r*.8], [r*.7,r*.1,r*.85], [-r*.3,-r*.4,r*.65], [r*.35,-r*.35,r*.6], [0,-r*.55,r*.5]]) {
+          ctx.beginPath();
+          ctx.arc(cx + dx, cy + dy, dr, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Soft shadow on bottom
+        ctx.globalAlpha = 0.08;
+        ctx.fillStyle = '#6090b0';
+        for (const [dx, dy, dr] of [[0, r*.3, r*.9], [-r*.5, r*.35, r*.6], [r*.5, r*.3, r*.65]]) {
+          ctx.beginPath();
+          ctx.arc(cx + dx, cy + dy, dr, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
       }
-      ctx.globalAlpha = 1;
+      drawCloud(180, 75, 3.5);
+      drawCloud(580, 50, 4.5);
+      drawCloud(880, 90, 2.8);
+      drawCloud(380, 110, 2);
 
-      // Sun disc
-      const sunX = w * 0.65, sunY = h * 0.62;
-      const sunG = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 80);
-      sunG.addColorStop(0, 'rgba(255,240,220,0.9)');
-      sunG.addColorStop(0.3, 'rgba(255,200,140,0.5)');
-      sunG.addColorStop(0.7, 'rgba(255,160,100,0.15)');
-      sunG.addColorStop(1, 'rgba(255,120,80,0)');
-      ctx.fillStyle = sunG;
-      ctx.fillRect(sunX - 80, sunY - 80, 160, 160);
-
-      // Clouds with rim lighting
-      for (const [cx, cy, rx, ry, a] of [
-        [180, 130, 140, 28, 0.3], [550, 90, 180, 35, 0.25], [850, 155, 100, 22, 0.3],
-        [350, 175, 80, 16, 0.2], [700, 200, 60, 13, 0.15], [100, 200, 70, 15, 0.2],
-      ]) {
-        // Cloud body
-        ctx.globalAlpha = a;
-        const cg = ctx.createRadialGradient(cx, cy, rx * 0.2, cx, cy, rx);
-        cg.addColorStop(0, '#f8d0c0');
-        cg.addColorStop(0.6, 'rgba(240,180,160,0.4)');
-        cg.addColorStop(1, 'rgba(220,140,130,0)');
-        ctx.fillStyle = cg;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // Bright rim on bottom edge
-        ctx.globalAlpha = a * 0.6;
-        const rg = ctx.createRadialGradient(cx, cy + ry * 0.3, rx * 0.3, cx, cy + ry * 0.3, rx * 0.8);
-        rg.addColorStop(0, '#ffe8c0');
-        rg.addColorStop(1, 'rgba(255,220,180,0)');
-        ctx.fillStyle = rg;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy + ry * 0.3, rx * 0.7, ry * 0.6, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-
-      // Distant mountains
-      ctx.fillStyle = '#4a2850';
-      ctx.globalAlpha = 0.35;
+      // Distant hills (pale green-blue)
+      ctx.fillStyle = '#90b8a0';
       ctx.beginPath();
-      ctx.moveTo(0, h * 0.78);
+      ctx.moveTo(0, h * 0.6);
       for (let x = 0; x <= w; x += 3) {
-        const y = h * 0.78 - Math.sin(x * 0.003) * 40 - Math.sin(x * 0.009) * 18 - Math.sin(x * 0.0015 + 1) * 25;
+        const y = h * 0.6 - Math.sin(x * 0.003) * 25 - Math.sin(x * 0.007 + 2) * 12;
         ctx.lineTo(x, y);
       }
       ctx.lineTo(w, h); ctx.lineTo(0, h);
       ctx.fill();
-      ctx.globalAlpha = 1;
 
-      // City silhouette
-      ctx.fillStyle = '#18101e';
-      ctx.globalAlpha = 0.6;
+      // Middle hills (warm green)
+      ctx.fillStyle = '#70a860';
       ctx.beginPath();
-      ctx.moveTo(0, h * 0.9);
-      const bld = [0,.9, 30,.86, 50,.88, 70,.78, 90,.82, 110,.74, 130,.78, 155,.84, 180,.8, 200,.7, 215,.74, 230,.82, 260,.86, 290,.78, 310,.72, 325,.68, 340,.72, 360,.82, 400,.86, 440,.8, 460,.72, 475,.68, 490,.74, 520,.84, 560,.88, 600,.82, 620,.75, 640,.7, 655,.74, 670,.82, 710,.86, 740,.78, 760,.74, 780,.78, 810,.84, 850,.8, 870,.72, 885,.76, 900,.84, 940,.88, 960,.82, 980,.86, 1024,.9];
-      for (let i = 0; i < bld.length; i += 2) ctx.lineTo(bld[i], h * bld[i + 1]);
+      ctx.moveTo(0, h * 0.7);
+      for (let x = 0; x <= w; x += 3) {
+        const y = h * 0.7 - Math.sin(x * 0.004 + 1) * 20 - Math.sin(x * 0.01) * 10;
+        ctx.lineTo(x, y);
+      }
       ctx.lineTo(w, h); ctx.lineTo(0, h);
       ctx.fill();
 
-      // Lit windows in buildings
-      ctx.fillStyle = '#f8d888';
-      for (let i = 0; i < 40; i++) {
-        const wx = 30 + Math.random() * (w - 60);
-        const wy = h * 0.76 + Math.random() * (h * 0.18);
-        ctx.globalAlpha = 0.3 + Math.random() * 0.5;
-        ctx.fillRect(wx, wy, 2, 2);
+      // Foreground meadow
+      ctx.fillStyle = '#58a048';
+      ctx.beginPath();
+      ctx.moveTo(0, h * 0.82);
+      for (let x = 0; x <= w; x += 3) {
+        const y = h * 0.82 - Math.sin(x * 0.005 + 3) * 12 - Math.sin(x * 0.013) * 6;
+        ctx.lineTo(x, y);
       }
-      ctx.globalAlpha = 1;
+      ctx.lineTo(w, h); ctx.lineTo(0, h);
+      ctx.fill();
 
-      // Telephone pole + power lines (right side)
-      ctx.strokeStyle = '#1a1020';
-      ctx.globalAlpha = 0.5;
-      ctx.lineWidth = 3;
-      const poleX = w * 0.82;
-      ctx.beginPath();
-      ctx.moveTo(poleX, h * 0.45);
-      ctx.lineTo(poleX, h);
-      ctx.stroke();
-      // Crossbar
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(poleX - 30, h * 0.48);
-      ctx.lineTo(poleX + 30, h * 0.48);
-      ctx.stroke();
-      // Wires
-      ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.3;
-      for (const [wy, sag] of [[h * 0.47, 12], [h * 0.49, 18], [h * 0.46, 8]]) {
+      // Tree on a hill
+      ctx.fillStyle = '#4a3528';
+      ctx.fillRect(w * 0.32 - 3, h * 0.58, 6, 22);
+      ctx.fillStyle = '#3a7830';
+      for (const [dx, dy, r] of [[0,-14,16], [-10,-7,12], [10,-7,12], [-4,-22,10], [5,-18,9]]) {
         ctx.beginPath();
-        ctx.moveTo(0, wy + sag * 0.5);
-        for (let x = 0; x <= w; x += 4) {
-          const catenary = sag * Math.cosh((x - poleX) / (w * 0.4)) / Math.cosh(poleX / (w * 0.4));
-          ctx.lineTo(x, wy + catenary);
-        }
+        ctx.arc(w * 0.32 + dx, h * 0.58 + dy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#4a8838';
+      for (const [dx, dy, r] of [[-6,-18,8], [7,-10,9]]) {
+        ctx.beginPath();
+        ctx.arc(w * 0.32 + dx, h * 0.58 + dy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Little red-roofed house
+      ctx.fillStyle = '#c04838';
+      ctx.beginPath();
+      ctx.moveTo(w * 0.68, h * 0.64);
+      ctx.lineTo(w * 0.68 - 16, h * 0.68);
+      ctx.lineTo(w * 0.68 + 16, h * 0.68);
+      ctx.fill();
+      ctx.fillStyle = '#e8ddd0';
+      ctx.fillRect(w * 0.68 - 12, h * 0.68, 24, 16);
+      ctx.fillStyle = '#80b8d8';
+      ctx.fillRect(w * 0.68 - 4, h * 0.685, 8, 7);
+
+      // Grass tufts in foreground
+      ctx.strokeStyle = '#4a9040';
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.4;
+      for (let i = 0; i < 30; i++) {
+        const gx = Math.random() * w;
+        const gy = h * 0.82 + Math.random() * (h * 0.18);
+        const gh = 4 + Math.random() * 8;
+        ctx.beginPath();
+        ctx.moveTo(gx, gy);
+        ctx.lineTo(gx - 2, gy - gh);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(gx + 3, gy);
+        ctx.lineTo(gx + 5, gy - gh * 0.8);
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
 
-      // Sakura petals
-      for (let i = 0; i < 30; i++) {
-        const px = Math.random() * w;
-        const py = Math.random() * h * 0.75;
-        const size = 3 + Math.random() * 7;
-        const angle = Math.random() * Math.PI * 2;
-        ctx.save();
-        ctx.translate(px, py);
-        ctx.rotate(angle);
-        ctx.globalAlpha = 0.25 + Math.random() * 0.45;
-        ctx.fillStyle = Math.random() > 0.5 ? '#f0a8b0' : '#f8c8d0';
+      // Tiny birds in the sky
+      ctx.strokeStyle = '#405060';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.3;
+      for (const [bx, by] of [[300, 130], [320, 125], [700, 80], [720, 85], [500, 100]]) {
         ctx.beginPath();
-        ctx.ellipse(0, 0, size, size * 0.45, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+        ctx.moveTo(bx - 4, by + 2);
+        ctx.quadraticCurveTo(bx, by - 2, bx + 4, by + 2);
+        ctx.stroke();
       }
       ctx.globalAlpha = 1;
 
       // Status bar
-      ctx.fillStyle = 'rgba(255,255,255,0.65)';
-      ctx.font = '22px system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '20px system-ui, sans-serif';
       ctx.textAlign = 'right';
       const now = new Date();
-      ctx.fillText(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`, w - 24, 32);
-
-      ctx.strokeStyle = 'rgba(255,255,255,0.45)';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(w - 88, 16, 24, 12);
-      ctx.fillStyle = 'rgba(255,255,255,0.45)';
-      ctx.fillRect(w - 86, 18, 18, 8);
-      ctx.fillRect(w - 64, 20, 3, 4);
+      ctx.fillText(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`, w - 20, 28);
 
       return new THREE.CanvasTexture(cv);
     }
@@ -373,8 +332,8 @@
       map: createScreenTexture(),
       roughness: 0.3,
       metalness: 0.0,
-      emissive: 0xd08868,
-      emissiveIntensity: 0.1,
+      emissive: 0x6898b8,
+      emissiveIntensity: 0.08,
     });
 
     const screen = new THREE.Mesh(
@@ -482,7 +441,7 @@
       ctx.font = '400 16px "Courier New", monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('PLY-01', 128, 16);
+      ctx.fillText('DEVICE 01', 128, 16);
       return new THREE.CanvasTexture(cv);
     }
 
@@ -544,51 +503,10 @@
     contactShadow.position.y = -1.145;
     scene.add(contactShadow);
 
-    // ── Interactions ───────────────────────────
-    let targetColor = new THREE.Color(0xEAE5E3);
-    let screenOn = true;
-    let targetScreenEmissive = 0.12;
-    let targetScreenColor = new THREE.Color(1, 1, 1);
-
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-
-    canvas.addEventListener('pointerdown', (e) => {
-      pointer.x = (e.clientX / innerWidth) * 2 - 1;
-      pointer.y = -(e.clientY / innerHeight) * 2 + 1;
-      raycaster.setFromCamera(pointer, camera);
-      if (raycaster.intersectObject(powerBtn).length) {
-        screenOn = !screenOn;
-        targetScreenEmissive = screenOn ? 0.12 : 0.0;
-        targetScreenColor.set(screenOn ? 1 : 0, screenOn ? 1 : 0, screenOn ? 1 : 0);
-      }
-    });
-
-    canvas.addEventListener('pointermove', (e) => {
-      pointer.x = (e.clientX / innerWidth) * 2 - 1;
-      pointer.y = -(e.clientY / innerHeight) * 2 + 1;
-      raycaster.setFromCamera(pointer, camera);
-      canvas.style.cursor = raycaster.intersectObject(powerBtn).length ? 'pointer' : '';
-    });
-
-    document.querySelectorAll('.swatch').forEach(el => {
-      el.addEventListener('click', () => {
-        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
-        el.classList.add('active');
-        targetColor.set(el.dataset.color);
-      });
-    });
-
     // ── Animate ────────────────────────────────
     function animate() {
       requestAnimationFrame(animate);
-
-      screenMat.emissiveIntensity += (targetScreenEmissive - screenMat.emissiveIntensity) * 0.06;
-      screenMat.color.lerp(targetScreenColor, 0.06);
-      powerLedMat.emissiveIntensity += ((screenOn ? 0.4 : 0.0) - powerLedMat.emissiveIntensity) * 0.06;
-      bodyMat.color.lerp(targetColor, 0.08);
       product.position.y = Math.sin(Date.now() * 0.0008) * 0.005;
-
       controls.update();
       renderer.render(scene, camera);
     }
