@@ -64,11 +64,11 @@
   </div>
 
   <div class="color-swatches">
-    <button class="swatch active" data-color="#e8ddd0" style="background:#e8ddd0" aria-label="Vanilla"></button>
-    <button class="swatch" data-color="#d4cfc8" style="background:#d4cfc8" aria-label="Warm Gray"></button>
-    <button class="swatch" data-color="#9cb8c8" style="background:#9cb8c8" aria-label="Powder Blue"></button>
-    <button class="swatch" data-color="#c4a4a0" style="background:#c4a4a0" aria-label="Blush"></button>
-    <button class="swatch" data-color="#b0b898" style="background:#b0b898" aria-label="Sage"></button>
+    <button class="swatch active" data-color="#d8ccb8" style="background:#d8ccb8" aria-label="Sand"></button>
+    <button class="swatch" data-color="#dfa8a8" style="background:#dfa8a8" aria-label="Sakura"></button>
+    <button class="swatch" data-color="#90b8d0" style="background:#90b8d0" aria-label="Sora"></button>
+    <button class="swatch" data-color="#a0b888" style="background:#a0b888" aria-label="Matcha"></button>
+    <button class="swatch" data-color="#b098c0" style="background:#b098c0" aria-label="Wisteria"></button>
   </div>
 
   <script type="importmap">
@@ -115,7 +115,7 @@
 
     // ── Materials ──────────────────────────────
     const bodyMat = new THREE.MeshPhysicalMaterial({
-      color: 0xe8ddd0,
+      color: 0xd8ccb8,
       roughness: 0.18,
       metalness: 0.0,
       clearcoat: 0.4,
@@ -273,10 +273,10 @@
     const fbGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.03, 16);
     fbGeo.rotateX(Math.PI / 2);
     const fbData = [
-      [0, 0.2, 0x8cc4a8],    // top — sage
-      [0.2, 0, 0xc88080],    // right — dusty rose
-      [0, -0.2, 0x80a0c0],   // bottom — slate blue
-      [-0.2, 0, 0xb898b8],   // left — lavender
+      [0, 0.2, 0xa0b888],    // top — matcha
+      [0.2, 0, 0xdfa8a8],    // right — sakura
+      [0, -0.2, 0x90b8d0],   // bottom — sora
+      [-0.2, 0, 0xb098c0],   // left — wisteria
     ];
     for (const [dx, dy, color] of fbData) {
       const btn = new THREE.Mesh(fbGeo,
@@ -412,7 +412,7 @@
     scene.add(contactShadow);
 
     // ── Interactions ───────────────────────────
-    let targetColor = new THREE.Color(0xe8ddd0);
+    let targetColor = new THREE.Color(0xd8ccb8);
     let screenOn = true;
     let targetScreenEmissive = 0.12;
     let targetScreenColor = new THREE.Color(1, 1, 1);
