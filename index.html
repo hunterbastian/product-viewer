@@ -187,12 +187,14 @@
       color: 0x1a1a1a,
       roughness: 0.3,
       metalness: 0.7,
+      transparent: true,
     });
 
     const redMat = new THREE.MeshStandardMaterial({
       color: 0xcc2222,
       roughness: 0.35,
       metalness: 0.1,
+      transparent: true,
     });
 
     // ── Product Group ──────────────────────────
@@ -259,9 +261,16 @@
       return new THREE.CanvasTexture(cv);
     }
 
+    const clockFaceMat = new THREE.MeshStandardMaterial({
+      map: createClockTexture(),
+      roughness: 0.25,
+      metalness: 0.0,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.0,
+    });
     const clockFace = new THREE.Mesh(
       new THREE.CircleGeometry(CLOCK_R, 64),
-      new THREE.MeshStandardMaterial({ map: createClockTexture(), roughness: 0.25, metalness: 0.0 })
+      clockFaceMat
     );
     clockFace.position.z = CLOCK_Z;
     product.add(clockFace);
@@ -407,14 +416,28 @@
     const pointer = new THREE.Vector2();
     let targetColor = new THREE.Color(0x2a2a2a);
 
-    // Button click
+    // Clock on/off state
+    let clockOn = true;
+    let flashTime = 0;              // timestamp of last toggle
+    const FLASH_DURATION = 600;     // ms for the shine effect
+    const offColor = new THREE.Color(0x1a1918);
+    const onColor = new THREE.Color(0xf0ece4);
+    let targetFaceColor = onColor.clone();
+
+    // Button click — toggle clock
     canvas.addEventListener('pointerdown', (e) => {
       pointer.x = (e.clientX / innerWidth) * 2 - 1;
       pointer.y = -(e.clientY / innerHeight) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
       if (raycaster.intersectObject(button).length) {
+        // Press animation
         button.position.y = BTN_Y - 0.035;
         setTimeout(() => { button.position.y = BTN_Y; }, 120);
+
+        // Toggle clock
+        clockOn = !clockOn;
+        flashTime = Date.now();
+        targetFaceColor.copy(clockOn ? onColor : offColor);
       }
     });
 
@@ -436,19 +459,56 @@
     });
 
     // ── Animation Loop ─────────────────────────
+    const BASE_BLOOM = 0.4;
+
     function animate() {
       requestAnimationFrame(animate);
 
-      // Real-time clock
-      const now = new Date();
-      const s = now.getSeconds() + now.getMilliseconds() / 1000;
-      const m = now.getMinutes() + s / 60;
-      const h = (now.getHours() % 12) + m / 60;
-      secondHand.rotation.z = -(s / 60) * Math.PI * 2;
-      minuteHand.rotation.z = -(m / 60) * Math.PI * 2;
-      hourHand.rotation.z = -(h / 12) * Math.PI * 2;
+      // Real-time clock (only update hands when on)
+      if (clockOn) {
+        const now = new Date();
+        const s = now.getSeconds() + now.getMilliseconds() / 1000;
+        const m = now.getMinutes() + s / 60;
+        const h = (now.getHours() % 12) + m / 60;
+        secondHand.rotation.z = -(s / 60) * Math.PI * 2;
+        minuteHand.rotation.z = -(m / 60) * Math.PI * 2;
+        hourHand.rotation.z = -(h / 12) * Math.PI * 2;
+      }
 
-      // Smooth color transition
+      // Fade hands visibility
+      const handTarget = clockOn ? 1.0 : 0.0;
+      hourHand.material.opacity += (handTarget - hourHand.material.opacity) * 0.08;
+      minuteHand.material.opacity += (handTarget - minuteHand.material.opacity) * 0.08;
+      secondHand.material.opacity += (handTarget - secondHand.material.opacity) * 0.08;
+      const handsVisible = hourHand.material.opacity > 0.01;
+      hourHand.visible = handsVisible;
+      minuteHand.visible = handsVisible;
+      secondHand.visible = handsVisible;
+      cap.visible = handsVisible;
+
+      // Clock face color transition (on = warm white, off = dark)
+      clockFaceMat.color.lerp(targetFaceColor, 0.06);
+
+      // Flash / shine effect on toggle
+      const flashElapsed = Date.now() - flashTime;
+      if (flashElapsed < FLASH_DURATION) {
+        // Sine pulse: rises fast, falls smooth
+        const t = flashElapsed / FLASH_DURATION;
+        const pulse = Math.sin(t * Math.PI) * (1 - t * 0.3);
+        // Spike bloom strength
+        bloom.strength = BASE_BLOOM + pulse * 1.8;
+        // Clock face emissive flash
+        clockFaceMat.emissiveIntensity = pulse * (clockOn ? 0.8 : 0.3);
+        // Chrome bezel flares
+        chromeMat.emissiveIntensity = 0.15 + pulse * 0.6;
+      } else {
+        // Settle back
+        bloom.strength += (BASE_BLOOM - bloom.strength) * 0.1;
+        clockFaceMat.emissiveIntensity *= 0.9;
+        chromeMat.emissiveIntensity += (0.15 - chromeMat.emissiveIntensity) * 0.1;
+      }
+
+      // Smooth body color transition
       bodyMat.color.lerp(targetColor, 0.08);
 
       // Subtle float
