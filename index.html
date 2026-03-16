@@ -185,53 +185,94 @@
     screenBezel.position.set(0, 0.05, 0.253);
     product.add(screenBezel);
 
-    // Screen display
+    // Screen display — anime sunset sky
     function createScreenTexture() {
       const w = 1024, h = 512;
       const cv = document.createElement('canvas');
       cv.width = w; cv.height = h;
       const ctx = cv.getContext('2d');
 
-      // PSP XMB-style gradient
-      const grad = ctx.createLinearGradient(0, 0, w, h);
-      grad.addColorStop(0, '#180530');
-      grad.addColorStop(0.4, '#0c2848');
-      grad.addColorStop(1, '#051828');
-      ctx.fillStyle = grad;
+      // Sunset gradient
+      const sky = ctx.createLinearGradient(0, 0, 0, h);
+      sky.addColorStop(0, '#2a1840');
+      sky.addColorStop(0.25, '#6b3068');
+      sky.addColorStop(0.45, '#d87070');
+      sky.addColorStop(0.6, '#e8a060');
+      sky.addColorStop(0.75, '#f0cc80');
+      sky.addColorStop(1, '#f8e8b0');
+      ctx.fillStyle = sky;
       ctx.fillRect(0, 0, w, h);
 
-      // Flowing waves
-      for (let i = 0; i < 14; i++) {
-        ctx.strokeStyle = `rgba(80,160,255,${0.02 + i * 0.003})`;
-        ctx.lineWidth = 1.5;
+      // Clouds
+      ctx.globalAlpha = 0.25;
+      for (const [cx, cy, rx, ry] of [[200, 140, 120, 25], [600, 100, 160, 30], [850, 170, 90, 18], [380, 180, 70, 14], [120, 200, 55, 12]]) {
+        const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
+        cg.addColorStop(0, '#ffddcc');
+        cg.addColorStop(1, 'rgba(255,200,180,0)');
+        ctx.fillStyle = cg;
         ctx.beginPath();
-        for (let x = 0; x < w; x += 3) {
-          const y = h / 2 + Math.sin(x * 0.007 + i * 0.55) * (15 + i * 14);
-          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        }
-        ctx.stroke();
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        ctx.fill();
       }
+      ctx.globalAlpha = 1;
+
+      // Distant mountain silhouette
+      ctx.fillStyle = '#3a2848';
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath();
+      ctx.moveTo(0, h * 0.82);
+      for (let x = 0; x <= w; x += 4) {
+        const y = h * 0.82 - Math.sin(x * 0.004) * 30 - Math.sin(x * 0.011) * 15 - Math.sin(x * 0.002 + 1) * 20;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(w, h); ctx.lineTo(0, h);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // City silhouette
+      ctx.fillStyle = '#1a1020';
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(0, h * 0.9);
+      const buildings = [0,0.9, 40,0.85, 60,0.88, 80,0.78, 100,0.82, 130,0.75, 150,0.82, 180,0.86, 220,0.8, 240,0.72, 260,0.76, 290,0.88, 340,0.84, 370,0.7, 390,0.74, 420,0.86, 500,0.82, 520,0.68, 540,0.72, 560,0.84, 620,0.88, 660,0.76, 680,0.8, 720,0.86, 760,0.78, 790,0.82, 830,0.74, 860,0.8, 900,0.86, 940,0.82, 970,0.88, 1024,0.9];
+      for (let i = 0; i < buildings.length; i += 2) {
+        ctx.lineTo(buildings[i], h * buildings[i + 1]);
+      }
+      ctx.lineTo(w, h); ctx.lineTo(0, h);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Sakura petals
+      ctx.fillStyle = '#f0b0b8';
+      for (let i = 0; i < 18; i++) {
+        const px = Math.random() * w;
+        const py = Math.random() * h * 0.7;
+        const size = 3 + Math.random() * 5;
+        const angle = Math.random() * Math.PI;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(angle);
+        ctx.globalAlpha = 0.3 + Math.random() * 0.4;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, size, size * 0.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
 
       // Status bar
-      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
       ctx.font = '22px system-ui, sans-serif';
       ctx.textAlign = 'right';
       const now = new Date();
       ctx.fillText(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`, w - 24, 32);
 
-      // Battery
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
       ctx.lineWidth = 1.5;
       ctx.strokeRect(w - 88, 16, 24, 12);
-      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
       ctx.fillRect(w - 86, 18, 18, 8);
       ctx.fillRect(w - 64, 20, 3, 4);
-
-      // Center icon hint
-      ctx.fillStyle = 'rgba(255,255,255,0.08)';
-      ctx.font = '48px system-ui';
-      ctx.textAlign = 'center';
-      ctx.fillText('▶', w / 2, h / 2 + 16);
 
       return new THREE.CanvasTexture(cv);
     }
@@ -240,8 +281,8 @@
       map: createScreenTexture(),
       roughness: 0.3,
       metalness: 0.0,
-      emissive: 0x3366aa,
-      emissiveIntensity: 0.12,
+      emissive: 0xd08868,
+      emissiveIntensity: 0.1,
     });
 
     const screen = new THREE.Mesh(
