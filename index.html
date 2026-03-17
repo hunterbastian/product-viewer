@@ -126,13 +126,13 @@
 
     // ── Materials ──────────────────────────────
     const bodyMat = new THREE.MeshPhysicalMaterial({
-      color: 0xc8b8d0,
-      roughness: 0.1,
+      color: 0xb0d0e8,
+      roughness: 0.05,
       metalness: 0.0,
-      clearcoat: 0.7,
-      clearcoatRoughness: 0.05,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.02,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.45,
     });
 
     const chromeMat = new THREE.MeshStandardMaterial({
@@ -140,11 +140,11 @@
     });
 
     const dpadMat = new THREE.MeshStandardMaterial({
-      color: 0xDCDDDD, roughness: 0.5, metalness: 0.05,
+      color: 0xc0d8e8, roughness: 0.3, metalness: 0.05,
     });
 
     const smallBtnMat = new THREE.MeshStandardMaterial({
-      color: 0xE5E4E6, roughness: 0.45, metalness: 0.08,
+      color: 0xc8dce8, roughness: 0.35, metalness: 0.08,
     });
 
     // ── Product Group ──────────────────────────
@@ -348,8 +348,8 @@
       map: createScreenTexture(),
       roughness: 0.3,
       metalness: 0.0,
-      emissive: 0x80b0d0,
-      emissiveIntensity: 0.35,
+      emissive: 0x88c0e0,
+      emissiveIntensity: 0.45,
     });
 
     const screen = new THREE.Mesh(
@@ -381,10 +381,10 @@
     const fbGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.03, 16);
     fbGeo.rotateX(Math.PI / 2);
     const fbData = [
-      [0, 0.2, 0xF7FCFE],    // top — unoharairo (faint blue-white)
-      [0.2, 0, 0xEAE5E3],    // right — soshoku (warm base)
-      [0, -0.2, 0xE7E7EB],   // bottom — murasakisuishiyou (purple water)
-      [-0.2, 0, 0xFBFAF5],   // left — kinariiro (dough)
+      [0, 0.2, 0x90dda0],    // top — mint
+      [0.2, 0, 0xf0a0a0],    // right — strawberry
+      [0, -0.2, 0x90b8e8],   // bottom — sky
+      [-0.2, 0, 0xd0a0e0],   // left — grape
     ];
     for (const [dx, dy, color] of fbData) {
       const btn = new THREE.Mesh(fbGeo,
