@@ -202,144 +202,142 @@
     screenBezel.position.set(0, 0.05, 0.253);
     product.add(screenBezel);
 
-    // Screen display — Ghibli landscape
-    function createScreenTexture() {
+    // Screen display — 4 Ghibli themes
+    function createScreenTexture(theme = 'day') {
       const w = 1024, h = 512;
       const cv = document.createElement('canvas');
       cv.width = w; cv.height = h;
       const ctx = cv.getContext('2d');
 
-      // Soft blue sky
-      const sky = ctx.createLinearGradient(0, 0, 0, h * 0.6);
-      sky.addColorStop(0, '#4090d0');
-      sky.addColorStop(0.4, '#60b0e8');
-      sky.addColorStop(1, '#a0d4f8');
+      const T = {
+        day:    { sky:['#4090d0','#60b0e8','#a0d4f8'], h1:'#78c090', h2:'#58b850', h3:'#40a838', tree:'#3a7830', tr2:'#4a8838', trunk:'#4a3528', roof:'#c04838', wall:'#e8ddd0', win:'#80b8d8', grass:'#4a9040' },
+        sunset: { sky:['#2a1840','#803868','#d87068','#e8a060','#f0cc80'], h1:'#508858', h2:'#3a7840', h3:'#2a6830', tree:'#2a6020', tr2:'#387028', trunk:'#3a2820', roof:'#903028', wall:'#d0b8a0', win:'#e0a060', grass:'#3a7030' },
+        night:  { sky:['#060814','#101830','#182848'], h1:'#142820', h2:'#0e2018', h3:'#0a1810', tree:'#0a1808', tr2:'#102010', trunk:'#1a1410', roof:'#301018', wall:'#383038', win:'#e8c050', grass:'#0c1808' },
+        rain:   { sky:['#485058','#607078','#788890'], h1:'#488848', h2:'#387838', h3:'#2a6828', tree:'#2a5820', tr2:'#346828', trunk:'#3a3028', roof:'#784030', wall:'#b8b0a8', win:'#90b0c8', grass:'#305828' },
+      }[theme];
+
+      // Sky
+      const sky = ctx.createLinearGradient(0, 0, 0, h * 0.65);
+      T.sky.forEach((c, i) => sky.addColorStop(i / (T.sky.length - 1), c));
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, w, h);
 
-      // Fluffy cumulus clouds
-      function drawCloud(cx, cy, scale) {
-        ctx.fillStyle = '#ffffff';
-        ctx.globalAlpha = 0.9;
-        const r = 18 * scale;
-        for (const [dx, dy, dr] of [[0,0,r], [-r*.7,r*.15,r*.8], [r*.7,r*.1,r*.85], [-r*.3,-r*.4,r*.65], [r*.35,-r*.35,r*.6], [0,-r*.55,r*.5]]) {
+      // Stars (night only)
+      if (theme === 'night') {
+        ctx.fillStyle = '#fff';
+        for (let i = 0; i < 80; i++) {
+          ctx.globalAlpha = 0.2 + Math.random() * 0.6;
           ctx.beginPath();
-          ctx.arc(cx + dx, cy + dy, dr, 0, Math.PI * 2);
+          ctx.arc(Math.random() * w, Math.random() * h * 0.45, 0.5 + Math.random() * 1.5, 0, Math.PI * 2);
           ctx.fill();
         }
-        // Soft shadow on bottom
-        ctx.globalAlpha = 0.08;
-        ctx.fillStyle = '#6090b0';
-        for (const [dx, dy, dr] of [[0, r*.3, r*.9], [-r*.5, r*.35, r*.6], [r*.5, r*.3, r*.65]]) {
-          ctx.beginPath();
-          ctx.arc(cx + dx, cy + dy, dr, 0, Math.PI * 2);
-          ctx.fill();
+        // Moon
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = '#f0e8d0';
+        ctx.beginPath(); ctx.arc(w * 0.8, h * 0.15, 22, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      // Sun disc (sunset only)
+      if (theme === 'sunset') {
+        const sx = w * 0.6, sy = h * 0.55;
+        const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, 70);
+        sg.addColorStop(0, 'rgba(255,235,200,0.85)');
+        sg.addColorStop(0.4, 'rgba(255,180,120,0.3)');
+        sg.addColorStop(1, 'rgba(255,120,80,0)');
+        ctx.fillStyle = sg;
+        ctx.fillRect(sx - 70, sy - 70, 140, 140);
+      }
+
+      // Clouds (day + sunset)
+      if (theme === 'day' || theme === 'sunset') {
+        const ca = theme === 'day' ? 0.9 : 0.35;
+        const cc = theme === 'day' ? '#ffffff' : '#e0c0a0';
+        function drawCloud(cx, cy, scale) {
+          ctx.fillStyle = cc; ctx.globalAlpha = ca;
+          const r = 18 * scale;
+          for (const [dx, dy, dr] of [[0,0,r],[-r*.7,r*.15,r*.8],[r*.7,r*.1,r*.85],[-r*.3,-r*.4,r*.65],[r*.35,-r*.35,r*.6]]) {
+            ctx.beginPath(); ctx.arc(cx+dx, cy+dy, dr, 0, Math.PI*2); ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+        }
+        drawCloud(180, 75, 3.5); drawCloud(580, 50, 4.5); drawCloud(880, 90, 2.8);
+      }
+
+      // Hills
+      for (const [color, yBase, freq, amp] of [[T.h1, 0.6, 0.003, 25], [T.h2, 0.7, 0.004, 20], [T.h3, 0.82, 0.005, 12]]) {
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.moveTo(0, h * yBase);
+        for (let x = 0; x <= w; x += 3) ctx.lineTo(x, h * yBase - Math.sin(x * freq + yBase) * amp - Math.sin(x * freq * 3) * amp * 0.4);
+        ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.fill();
+      }
+
+      // Tree
+      ctx.fillStyle = T.trunk;
+      ctx.fillRect(w * 0.32 - 3, h * 0.58, 6, 22);
+      ctx.fillStyle = T.tree;
+      for (const [dx,dy,r] of [[0,-14,16],[-10,-7,12],[10,-7,12],[-4,-22,10],[5,-18,9]]) {
+        ctx.beginPath(); ctx.arc(w*0.32+dx, h*0.58+dy, r, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.fillStyle = T.tr2;
+      for (const [dx,dy,r] of [[-6,-18,8],[7,-10,9]]) {
+        ctx.beginPath(); ctx.arc(w*0.32+dx, h*0.58+dy, r, 0, Math.PI*2); ctx.fill();
+      }
+
+      // House
+      ctx.fillStyle = T.roof;
+      ctx.beginPath(); ctx.moveTo(w*0.68, h*0.64); ctx.lineTo(w*0.68-16, h*0.68); ctx.lineTo(w*0.68+16, h*0.68); ctx.fill();
+      ctx.fillStyle = T.wall; ctx.fillRect(w*0.68-12, h*0.68, 24, 16);
+      ctx.fillStyle = T.win; ctx.fillRect(w*0.68-4, h*0.685, 8, 7);
+
+      // Grass
+      ctx.strokeStyle = T.grass; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.4;
+      for (let i = 0; i < 25; i++) {
+        const gx = Math.random()*w, gy = h*0.82 + Math.random()*(h*0.18), gh = 4+Math.random()*8;
+        ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx-2, gy-gh); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      // Birds (day only)
+      if (theme === 'day') {
+        ctx.strokeStyle = '#405060'; ctx.lineWidth = 1; ctx.globalAlpha = 0.3;
+        for (const [bx,by] of [[300,130],[320,125],[700,80],[720,85],[500,100]]) {
+          ctx.beginPath(); ctx.moveTo(bx-4,by+2); ctx.quadraticCurveTo(bx,by-2,bx+4,by+2); ctx.stroke();
         }
         ctx.globalAlpha = 1;
       }
-      drawCloud(180, 75, 3.5);
-      drawCloud(580, 50, 4.5);
-      drawCloud(880, 90, 2.8);
-      drawCloud(380, 110, 2);
 
-      // Distant hills (pale green-blue)
-      ctx.fillStyle = '#78c090';
-      ctx.beginPath();
-      ctx.moveTo(0, h * 0.6);
-      for (let x = 0; x <= w; x += 3) {
-        const y = h * 0.6 - Math.sin(x * 0.003) * 25 - Math.sin(x * 0.007 + 2) * 12;
-        ctx.lineTo(x, y);
-      }
-      ctx.lineTo(w, h); ctx.lineTo(0, h);
-      ctx.fill();
-
-      // Middle hills (warm green)
-      ctx.fillStyle = '#58b850';
-      ctx.beginPath();
-      ctx.moveTo(0, h * 0.7);
-      for (let x = 0; x <= w; x += 3) {
-        const y = h * 0.7 - Math.sin(x * 0.004 + 1) * 20 - Math.sin(x * 0.01) * 10;
-        ctx.lineTo(x, y);
-      }
-      ctx.lineTo(w, h); ctx.lineTo(0, h);
-      ctx.fill();
-
-      // Foreground meadow
-      ctx.fillStyle = '#40a838';
-      ctx.beginPath();
-      ctx.moveTo(0, h * 0.82);
-      for (let x = 0; x <= w; x += 3) {
-        const y = h * 0.82 - Math.sin(x * 0.005 + 3) * 12 - Math.sin(x * 0.013) * 6;
-        ctx.lineTo(x, y);
-      }
-      ctx.lineTo(w, h); ctx.lineTo(0, h);
-      ctx.fill();
-
-      // Tree on a hill
-      ctx.fillStyle = '#4a3528';
-      ctx.fillRect(w * 0.32 - 3, h * 0.58, 6, 22);
-      ctx.fillStyle = '#3a7830';
-      for (const [dx, dy, r] of [[0,-14,16], [-10,-7,12], [10,-7,12], [-4,-22,10], [5,-18,9]]) {
-        ctx.beginPath();
-        ctx.arc(w * 0.32 + dx, h * 0.58 + dy, r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = '#4a8838';
-      for (const [dx, dy, r] of [[-6,-18,8], [7,-10,9]]) {
-        ctx.beginPath();
-        ctx.arc(w * 0.32 + dx, h * 0.58 + dy, r, 0, Math.PI * 2);
-        ctx.fill();
+      // Fireflies (night only)
+      if (theme === 'night') {
+        ctx.fillStyle = '#e8d060';
+        for (let i = 0; i < 15; i++) {
+          const fx = Math.random()*w, fy = h*0.55 + Math.random()*(h*0.35);
+          ctx.globalAlpha = 0.3 + Math.random()*0.5;
+          ctx.beginPath(); ctx.arc(fx, fy, 1.5 + Math.random()*2, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
       }
 
-      // Little red-roofed house
-      ctx.fillStyle = '#c04838';
-      ctx.beginPath();
-      ctx.moveTo(w * 0.68, h * 0.64);
-      ctx.lineTo(w * 0.68 - 16, h * 0.68);
-      ctx.lineTo(w * 0.68 + 16, h * 0.68);
-      ctx.fill();
-      ctx.fillStyle = '#e8ddd0';
-      ctx.fillRect(w * 0.68 - 12, h * 0.68, 24, 16);
-      ctx.fillStyle = '#80b8d8';
-      ctx.fillRect(w * 0.68 - 4, h * 0.685, 8, 7);
-
-      // Grass tufts in foreground
-      ctx.strokeStyle = '#4a9040';
-      ctx.lineWidth = 1.5;
-      ctx.globalAlpha = 0.4;
-      for (let i = 0; i < 30; i++) {
-        const gx = Math.random() * w;
-        const gy = h * 0.82 + Math.random() * (h * 0.18);
-        const gh = 4 + Math.random() * 8;
-        ctx.beginPath();
-        ctx.moveTo(gx, gy);
-        ctx.lineTo(gx - 2, gy - gh);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(gx + 3, gy);
-        ctx.lineTo(gx + 5, gy - gh * 0.8);
-        ctx.stroke();
+      // Rain streaks (rain only)
+      if (theme === 'rain') {
+        ctx.strokeStyle = 'rgba(200,210,220,0.15)'; ctx.lineWidth = 1;
+        for (let i = 0; i < 60; i++) {
+          const rx = Math.random()*w, ry = Math.random()*h;
+          ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(rx-2, ry+12+Math.random()*8); ctx.stroke();
+        }
       }
-      ctx.globalAlpha = 1;
-
-      // Tiny birds in the sky
-      ctx.strokeStyle = '#405060';
-      ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.3;
-      for (const [bx, by] of [[300, 130], [320, 125], [700, 80], [720, 85], [500, 100]]) {
-        ctx.beginPath();
-        ctx.moveTo(bx - 4, by + 2);
-        ctx.quadraticCurveTo(bx, by - 2, bx + 4, by + 2);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
 
       // Status bar
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillStyle = theme === 'night' ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.65)';
       ctx.font = '20px system-ui, sans-serif';
       ctx.textAlign = 'right';
       const now = new Date();
       ctx.fillText(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`, w - 20, 28);
+
+      // Theme label bottom-left
+      ctx.fillStyle = theme === 'night' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.4)';
+      ctx.font = '16px system-ui'; ctx.textAlign = 'left';
+      ctx.fillText({ day:'☀ day', sunset:'◑ sunset', night:'☾ night', rain:'☂ rain' }[theme], 20, h - 16);
 
       return new THREE.CanvasTexture(cv);
     }
@@ -381,17 +379,20 @@
     const fbGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.03, 16);
     fbGeo.rotateX(Math.PI / 2);
     const fbData = [
-      [0, 0.2, 0x90dda0],    // top — mint
-      [0.2, 0, 0xf0a0a0],    // right — strawberry
-      [0, -0.2, 0x90b8e8],   // bottom — sky
-      [-0.2, 0, 0xd0a0e0],   // left — grape
+      [0, 0.2, 0x90dda0, 'day'],      // top — mint — day
+      [0.2, 0, 0xf0a0a0, 'sunset'],   // right — strawberry — sunset
+      [0, -0.2, 0x90b8e8, 'night'],   // bottom — sky — night
+      [-0.2, 0, 0xd0a0e0, 'rain'],    // left — grape — rain
     ];
-    for (const [dx, dy, color] of fbData) {
+    const faceButtons = [];
+    for (const [dx, dy, color, theme] of fbData) {
       const btn = new THREE.Mesh(fbGeo,
         new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.1 })
       );
       btn.position.set(1.65 + dx, 0.05 + dy, 0.27);
+      btn.userData = { theme, restZ: 0.27 };
       product.add(btn);
+      faceButtons.push(btn);
     }
 
     // ── Analog Nub ─────────────────────────────
@@ -518,6 +519,42 @@
     contactShadow.rotation.x = -Math.PI / 2;
     contactShadow.position.y = -1.145;
     scene.add(contactShadow);
+
+    // ── Interactions ───────────────────────────
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const emissiveMap = { day: 0x88c0e0, sunset: 0xd09060, night: 0x3050a0, rain: 0x708898 };
+
+    canvas.addEventListener('pointerdown', (e) => {
+      pointer.x = (e.clientX / innerWidth) * 2 - 1;
+      pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      for (const btn of faceButtons) {
+        if (raycaster.intersectObject(btn).length) {
+          // Press animation
+          btn.position.z = btn.userData.restZ - 0.02;
+          setTimeout(() => { btn.position.z = btn.userData.restZ; }, 120);
+          // Swap screen
+          const theme = btn.userData.theme;
+          screenMat.map.dispose();
+          screenMat.map = createScreenTexture(theme);
+          screenMat.emissive.set(emissiveMap[theme]);
+          screenMat.needsUpdate = true;
+          break;
+        }
+      }
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      pointer.x = (e.clientX / innerWidth) * 2 - 1;
+      pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      let over = false;
+      for (const btn of faceButtons) {
+        if (raycaster.intersectObject(btn).length) { over = true; break; }
+      }
+      canvas.style.cursor = over ? 'pointer' : '';
+    });
 
     // ── Animate ────────────────────────────────
     function animate() {
